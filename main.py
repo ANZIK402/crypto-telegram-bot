@@ -1,37 +1,40 @@
-import logging
+import os
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-import requests
+import threading
+from flask import Flask
 
-import os
+# TELEGRAM BOT SECTION
 TOKEN = os.environ.get("BOT_TOKEN")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Welcome to CRYPTO BOT! Use /price <symbol> to get started.")
+    await update.message.reply_text("Welcome to Crypto Bot! Use /price BTCUSDT")
 
 async def price(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if len(context.args) != 1:
-        await update.message.reply_text("Usage: /price <symbol>\nExample: /price BTCUSDT")
-        return
-
     symbol = context.args[0].upper()
-    try:
-        response = requests.get(f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}")
-        data = response.json()
-        if "price" in data:
-            await update.message.reply_text(f"The current price of {symbol} is ${float(data['price']):,.2f}")
-        else:
-            await update.message.reply_text("Invalid symbol or API issue.")
-    except Exception as e:
-        await update.message.reply_text(f"Error: {e}")
+    await update.message.reply_text(f"Price for {symbol}: $1234.56 (demo)")
 
-def main():
-    app = ApplicationBuilder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("price", price))
-    print("Bot is running...")
+app = ApplicationBuilder().token(TOKEN).build()
+app.add_handler(CommandHandler("start", start))
+app.add_handler(CommandHandler("price", price))
+
+# FLASK DUMMY SERVER FOR RENDER
+flask_app = Flask(__name__)
+
+@flask_app.route('/')
+def home():
+    return "Bot is running"
+
+def run_flask():
+    port = int(os.environ.get("PORT", 10000))
+    flask_app.run(host="0.0.0.0", port=port)
+
+def run_bot():
     app.run_polling()
 
-if __name__ == "__main__":
-    main()
+# RUN BOTH
+if __name__ == '__main__':
+    threading.Thread(target=run_flask).start()
+    run_bot()
+
   
